@@ -4,11 +4,6 @@ Description: >
   sam-dynamodb-app
   Sample SAM Template for sam-dynamodb-app
 
-Parameters:
-  Stage:
-    Type: String
-    Default: local
-
 Resources:
   sampleFunction:
     Type: AWS::Serverless::Function
@@ -18,9 +13,6 @@ Resources:
       Runtime: python3.12
       MemorySize: 128
       Timeout: 10
-      Environment:
-        Variables:
-          DYNAMODB_ENDPOINT: "http://host.docker.internal:8000"
       Layers:
         - !Ref Layer1
       Policies:
@@ -47,14 +39,8 @@ Resources:
         - arm64
       EphemeralStorage:
         Size: 512
-      Environment:
-        Variables: {}
-      EventInvokeConfig:
-        MaximumEventAgeInSeconds: 21600
-        MaximumRetryAttempts: 2
       Layers:
         - !Ref Layer1
-      PackageType: Zip
       Policies:
         - Statement:
             - Effect: Allow
@@ -105,9 +91,6 @@ Resources:
               Condition:
                 StringEquals:
                   aws:CalledViaLast: sns.amazonaws.com
-      RecursiveLoop: Terminate
-      SnapStart:
-        ApplyOn: None
       Events:
         GetCustomerOrderDetail:
           Type: Api
@@ -115,23 +98,12 @@ Resources:
             Path: /customer/order
             Method: GET
             RestApiId: !Ref MyApi
-      RuntimeManagementConfig:
-        UpdateRuntimeOn: Auto
 
   MyApi:
     Type: AWS::Serverless::Api
     Properties:
       Name: MyApi
-      StageName: !Ref Stage
-      Cors:
-        AllowOrigin: "'http://127.0.0.1:3000'"
-        AllowMethods:
-          - "'GET'"
-          - "'POST'"
-          - "'PUT'"
-          - "'DELETE'"
-        AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
-        MaxAge: 3600
+      StageName: local
       Auth:
         ApiKeyRequired: false
 
@@ -142,157 +114,3 @@ Resources:
       LayerName: utils
       CompatibleRuntimes:
         - python3.12
-
-
-
-# AWSTemplateFormatVersion: '2010-09-09'
-# Transform: AWS::Serverless-2016-10-31
-# Description: >
-#   sam-dynamodb-app
-
-#   Sample SAM Template for sam-dynamodb-app
-
-# Parameters:
-#   Stage:
-#     Type: String
-#     Default: local
-
-# Resources:
-#   sampleFunction:
-#     Type: AWS::Serverless::Function
-#     Properties:
-#       CodeUri: hello_world/
-#       Handler: app.lambda_handler
-#       Runtime: python3.12
-#       MemorySize: 128
-#       Timeout: 10
-#       Environment:
-#         Variables:
-#           DYNAMODB_ENDPOINT: "http://host.docker.internal:8000"  # DynamoDB のローカルエンドポイント
-#       Layers:
-#         - !Ref Layer1
-#       Policies:
-#         - DynamoDBCrudPolicy:
-#             TableName: SampleTable
-#       Events:
-#         sampleFunction:
-#           Type: Api
-#           Properties:
-#             Path: /sample
-#             Method: GET
-#             RestApiId: !Ref MyApi  # 追加した API Gateway を参照
-
-#   getcustomerorderdetail:
-#     Type: AWS::Serverless::Function
-#     Properties:
-#       CodeUri: getCustomerOrderDetail/
-#       Description: ''
-#       MemorySize: 128
-#       Timeout: 7
-#       Handler: lambda_function.lambda_handler
-#       Runtime: python3.12
-#       Architectures:
-#         - arm64
-#       EphemeralStorage:
-#         Size: 512
-#       Environment:
-#         Variables:
-#           # env: dev
-#           # DYNAMODB_ENDPOINT: http://host.docker.internal:8000
-#       EventInvokeConfig:
-#         MaximumEventAgeInSeconds: 21600
-#         MaximumRetryAttempts: 2
-#       Layers:
-#         - !Ref Layer1
-#       PackageType: Zip
-#       Policies:
-#         - Statement:
-#             - Effect: Allow
-#               Action:
-#                 - dynamodb:DeleteItem
-#                 - dynamodb:GetItem
-#                 - dynamodb:PutItem
-#                 - dynamodb:Scan
-#                 - dynamodb:UpdateItem
-#               Resource: arn:aws:dynamodb:ap-northeast-1:058264340767:table/*
-#             - Effect: Allow
-#               Action:
-#                 - logs:CreateLogGroup
-#               Resource: arn:aws:logs:ap-northeast-1:058264340767:*
-#             - Effect: Allow
-#               Action:
-#                 - logs:CreateLogStream
-#                 - logs:PutLogEvents
-#               Resource:
-#                 - >-
-#                   arn:aws:logs:ap-northeast-1:058264340767:log-group:/aws/lambda/get-goods:*
-#             - Sid: CloudWatchLogsFullAccess
-#               Effect: Allow
-#               Action:
-#                 - logs:*
-#                 - cloudwatch:GenerateQuery
-#               Resource: '*'
-#             - Sid: SNSFullAccess
-#               Effect: Allow
-#               Action:
-#                 - sns:*
-#               Resource: '*'
-#             - Sid: SMSAccessViaSNS
-#               Effect: Allow
-#               Action:
-#                 - sms-voice:DescribeVerifiedDestinationNumbers
-#                 - sms-voice:CreateVerifiedDestinationNumber
-#                 - sms-voice:SendDestinationNumberVerificationCode
-#                 - sms-voice:SendTextMessage
-#                 - sms-voice:DeleteVerifiedDestinationNumber
-#                 - sms-voice:VerifyDestinationNumber
-#                 - sms-voice:DescribeAccountAttributes
-#                 - sms-voice:DescribeSpendLimits
-#                 - sms-voice:DescribePhoneNumbers
-#                 - sms-voice:SetTextMessageSpendLimitOverride
-#                 - sms-voice:DescribeOptedOutNumbers
-#                 - sms-voice:DeleteOptedOutNumber
-#               Resource: '*'
-#               Condition:
-#                 StringEquals:
-#                   aws:CalledViaLast: sns.amazonaws.com
-#       RecursiveLoop: Terminate
-#       SnapStart:
-#         ApplyOn: None
-#       Events:
-#         GetCustomerOrderDetail:
-#           Type: Api
-#           Properties:
-#             Path: /customer/order
-#             Method: GET
-#             RestApiId: !Ref MyApi  # 追加した API Gateway を参照
-#       RuntimeManagementConfig:
-#         UpdateRuntimeOn: Auto
-
-#   MyApi:
-#     Type: AWS::Serverless::Api
-#     Properties:
-#       Name: MyApi
-#       StageName: !Ref Stage
-#       StageVariables: !Ref Stag
-#       Cors:
-#         # AllowOrigins: "'*'"  # 任意のドメインを許可。必要に応じて変更
-#         AllowOrigin: "'http://127.0.0.1:3000'"
-#         AllowMethods:
-#         - "'GET'"
-#         - "'POST'"
-#         - "'PUT'"
-#         - "'DELETE'"
-#         AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
-#         # - "'Content-Type'"
-#         MaxAge: 3600  # オプション。プリフライトリクエストのキャッシュの時間を設定
-#       Auth:
-#         ApiKeyRequired: false
-
-#   Layer1:
-#     Type: AWS::Serverless::LayerVersion
-#     Properties:
-#       ContentUri: ./utils
-#       LayerName: utils
-#       CompatibleRuntimes:
-#         - python3.12

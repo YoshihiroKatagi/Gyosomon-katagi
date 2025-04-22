@@ -11,8 +11,8 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 # DynamoDB へ接続
-dynamodb = boto3.resource("dynamodb", endpoint_url=os.getenv("DYNAMODB_ENDPOINT"))
-# dynamodb = boto3.resource('dynamodb', endpoint_url="http://host.docker.internal:8000")
+# dynamodb = boto3.resource("dynamodb", endpoint_url=os.getenv("DYNAMODB_ENDPOINT"))
+dynamodb = boto3.resource('dynamodb', endpoint_url="http://host.docker.internal:8000")
 table = dynamodb.Table("SampleTable")
 
 def lambda_handler(event, context):
