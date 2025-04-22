@@ -17,3 +17,6 @@ aws dynamodb put-item \
     --region ap-northeast-1
 
 echo "DynamoDB table and initial data created."
+
+# データ確認
+aws dynamodb query --table-name SampleTable --key-condition-expression "Id = :id" --expression-attribute-values '{":id": {"S": "123"}}' --endpoint-url http://localhost:8000 --region ap-northeast-1

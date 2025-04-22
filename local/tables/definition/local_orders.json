@@ -1,0 +1,19 @@
+{
+  "TableName": "local_orders",
+  "AttributeDefinitions": [
+    {
+      "AttributeName": "order_id",
+      "AttributeType": "S"
+    }
+  ],
+  "KeySchema": [
+    {
+      "AttributeName": "order_id",
+      "KeyType": "HASH"
+    }
+  ],
+  "ProvisionedThroughput": {
+    "ReadCapacityUnits": 1,
+    "WriteCapacityUnits": 1
+  }
+}

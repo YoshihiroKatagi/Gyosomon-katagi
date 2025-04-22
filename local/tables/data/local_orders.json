@@ -1,0 +1,41 @@
+{
+  "order_id": {"S": "2501300002"},
+  "confirmed_by": {"S": "遠藤啓"},
+  "confirmed_datetime": {"S": "2025-01-30T10:22:27.994981"},
+  "customer_id": {"S": "customer01"},
+  "desired_arrival_date": {"S": "2025-02-01"},
+  "ordered_datetime": {"S": "2025-01-30 09:51:01"},
+  "ordered_products": {
+    "L": [
+      {
+        "M": {
+          "No": {"N": "0"},
+          "product_id": {"S": "100097"},
+          "product_name": {"S": "いか三昧味くらべ 40g×3段"},
+          "product_order_comment": {"S": "test"},
+          "product_order_quantity": {"N": "1"}
+        }
+      },
+      {
+        "M": {
+          "No": {"N": "1"},
+          "product_id": {"S": "102561"},
+          "product_name": {"S": "いかキムチ 50g×3段"},
+          "product_order_comment": {"S": "test"},
+          "product_order_quantity": {"N": "2"}
+        }
+      },
+      {
+        "M": {
+          "No": {"N": "2"},
+          "product_id": {"S": "150553"},
+          "product_name": {"S": "三陸うすあさめかぶ (35g×3+1)4段"},
+          "product_order_comment": {"S": "test"},
+          "product_order_quantity": {"N": "3"}
+        }
+      }
+    ]
+  },
+  "order_comment": {"S": "こちらテスト発注です。"},
+  "order_status": {"N": "2"}
+}

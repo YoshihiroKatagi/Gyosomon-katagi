@@ -1,0 +1,9 @@
+{
+  "stageVariables": {
+    "alias": "local"
+  },
+  "queryStringParameters": {
+    "customer_id": "customer01",
+    "order_id": "2501300002"
+  }
+}

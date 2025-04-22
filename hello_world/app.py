@@ -1,87 +1,58 @@
+from utils import (
+    get_table_prefix,
+    get_dynamodb_resource
+)
 import os
 import boto3
 import json
 import uuid
+import logging
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 # DynamoDB へ接続
 dynamodb = boto3.resource("dynamodb", endpoint_url=os.getenv("DYNAMODB_ENDPOINT"))
-table = dynamodb.Table("SampleTable")  # DynamoDB のテーブル名を 'SampleTable' に変更
+# dynamodb = boto3.resource('dynamodb', endpoint_url="http://host.docker.internal:8000")
+table = dynamodb.Table("SampleTable")
 
 def lambda_handler(event, context):
-    # "Id" が "123" のアイテムを取得
-    response = table.get_item(
-        Key={
-            'Id': '123'
-        }
-    )
+    # results = {"message": "Test, SampleFanction"}
+    results = {}
 
-    # データが存在する場合
-    if 'Item' in response:
-        item = response['Item']
-        return {
-            "statusCode": 200,
-            "body": json.dumps(item)
-        }
+    prefix = get_table_prefix(event)
+    # stage_variables = event.get('stageVariables') or {}
+    # logger.info(f"stage_variables: {stage_variables}")
+    # alias = stage_variables.get('alias', '')
+    # logger.info(f"alias: {alias}")
+
+    dynamodb = get_dynamodb_resource(event)
+    dynamodb = boto3.resource('dynamodb', endpoint_url="http://host.docker.internal:8000")
+
+    # ① レコード追加
+    new_item = {
+        "Id": str(uuid.uuid4()),
+        "Message": "Hello, AWS SAM!"
+    }
+    table.put_item(Item=new_item)
+    results["PutItem"] = new_item
+
+    # ② テーブル全件取得（一覧）
+    scan_response = table.scan()
+    all_items = scan_response.get("Items", [])
+    results["Scan"] = all_items
+
+    # ③ ID = "123" のアイテムを検索
+    get_response = table.get_item(Key={"Id": "123"})
+    if "Item" in get_response:
+        results["GetItem"] = get_response["Item"]
     else:
-        # データが見つからなかった場合
-        return {
-            "statusCode": 404,
-            "body": json.dumps({"message": "Item not found"})
-        }
+        results["GetItem"] = "Item with Id=123 not found"
 
-# def lambda_handler(event, context):
-#     # データを DynamoDB に保存
-#     item = {
-#         "Id": str(uuid.uuid4()),  # 'id' を 'Id' に変更（テーブル定義に合わせる）
-#         "Message": "Hello, AWS SAM!"  # 'message' を 'Message' に変更（テーブル定義に合わせる）
-#     }
-#     table.put_item(Item=item)
+    # ④ 追加したレコードを削除
+    table.delete_item(Key={"Id": new_item["Id"]})
+    results["DeleteItem"] = f"Deleted Id={new_item['Id']}"
 
-#     return {
-#         "statusCode": 200,
-#         "body": json.dumps(item)
-#     }
-
-
-# import json
-
-# # import requests
-
-
-# def lambda_handler(event, context):
-#     """Sample pure Lambda function
-
-#     Parameters
-#     ----------
-#     event: dict, required
-#         API Gateway Lambda Proxy Input Format
-
-#         Event doc: https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html#api-gateway-simple-proxy-for-lambda-input-format
-
-#     context: object, required
-#         Lambda Context runtime methods and attributes
-
-#         Context doc: https://docs.aws.amazon.com/lambda/latest/dg/python-context-object.html
-
-#     Returns
-#     ------
-#     API Gateway Lambda Proxy Output Format: dict
-
-#         Return doc: https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html
-#     """
-
-#     # try:
-#     #     ip = requests.get("http://checkip.amazonaws.com/")
-#     # except requests.RequestException as e:
-#     #     # Send some context about this error to Lambda Logs
-#     #     print(e)
-
-#     #     raise e
-
-#     return {
-#         "statusCode": 200,
-#         "body": json.dumps({
-#             "message": "hello world",
-#             # "location": ip.text.replace("\n", "")
-#         }),
-#     }
+    return {
+        "statusCode": 200,
+        "body": json.dumps(results, indent=2)
+    }

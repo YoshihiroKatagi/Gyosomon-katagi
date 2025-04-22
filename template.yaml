@@ -2,22 +2,15 @@ AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: >
   sam-dynamodb-app
-
   Sample SAM Template for sam-dynamodb-app
 
-# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
-Globals:
-  Function:
-    Timeout: 3
+Parameters:
+  Stage:
+    Type: String
+    Default: local
 
-    Tracing: Active
-    # You can add LoggingConfig parameters such as the Logformat, Log Group, and SystemLogLevel or ApplicationLogLevel. Learn more here https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-resource-function.html#sam-function-loggingconfig.
-    LoggingConfig:
-      LogFormat: JSON
-  Api:
-    TracingEnabled: true
 Resources:
-  MyLambdaFunction:
+  sampleFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: hello_world/
@@ -27,47 +20,279 @@ Resources:
       Timeout: 10
       Environment:
         Variables:
-          DYNAMODB_ENDPOINT: "http://localhost:8000"
-          # DYNAMODB_ENDPOINT: "http://dynamodb:8000"
-          # DYNAMODB_ENDPOINT: "http://host.docker.internal:8000"  # DynamoDB のローカルエンドポイント
+          DYNAMODB_ENDPOINT: "http://host.docker.internal:8000"
+      Layers:
+        - !Ref Layer1
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: MyDynamoDBTable
-  MyDynamoDBTable:
-    Type: AWS::DynamoDB::Table
-    Properties:
-      TableName: MyDynamoDBTable
-      AttributeDefinitions:
-        - AttributeName: id
-          AttributeType: S
-      KeySchema:
-        - AttributeName: id
-          KeyType: HASH
-      BillingMode: PAY_PER_REQUEST
+            TableName: SampleTable
+      Events:
+        sampleApi:
+          Type: Api
+          Properties:
+            Path: /sample
+            Method: GET
+            RestApiId: !Ref MyApi  # API Gateway に手動で紐づけ
 
-  ApplicationResourceGroup:
-    Type: AWS::ResourceGroups::Group
+  getcustomerorderdetail:
+    Type: AWS::Serverless::Function
     Properties:
-      Name:
-        Fn::Sub: ApplicationInsights-SAM-${AWS::StackName}
-      ResourceQuery:
-        Type: CLOUDFORMATION_STACK_1_0
-  ApplicationInsightsMonitoring:
-    Type: AWS::ApplicationInsights::Application
+      CodeUri: getCustomerOrderDetail/
+      Description: ''
+      MemorySize: 128
+      Timeout: 7
+      Handler: lambda_function.lambda_handler
+      Runtime: python3.12
+      Architectures:
+        - arm64
+      EphemeralStorage:
+        Size: 512
+      Environment:
+        Variables: {}
+      EventInvokeConfig:
+        MaximumEventAgeInSeconds: 21600
+        MaximumRetryAttempts: 2
+      Layers:
+        - !Ref Layer1
+      PackageType: Zip
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:DeleteItem
+                - dynamodb:GetItem
+                - dynamodb:PutItem
+                - dynamodb:Scan
+                - dynamodb:UpdateItem
+              Resource: arn:aws:dynamodb:ap-northeast-1:058264340767:table/*
+            - Effect: Allow
+              Action:
+                - logs:CreateLogGroup
+              Resource: arn:aws:logs:ap-northeast-1:058264340767:*
+            - Effect: Allow
+              Action:
+                - logs:CreateLogStream
+                - logs:PutLogEvents
+              Resource:
+                - arn:aws:logs:ap-northeast-1:058264340767:log-group:/aws/lambda/get-goods:*
+            - Sid: CloudWatchLogsFullAccess
+              Effect: Allow
+              Action:
+                - logs:*
+                - cloudwatch:GenerateQuery
+              Resource: '*'
+            - Sid: SNSFullAccess
+              Effect: Allow
+              Action:
+                - sns:*
+              Resource: '*'
+            - Sid: SMSAccessViaSNS
+              Effect: Allow
+              Action:
+                - sms-voice:DescribeVerifiedDestinationNumbers
+                - sms-voice:CreateVerifiedDestinationNumber
+                - sms-voice:SendDestinationNumberVerificationCode
+                - sms-voice:SendTextMessage
+                - sms-voice:DeleteVerifiedDestinationNumber
+                - sms-voice:VerifyDestinationNumber
+                - sms-voice:DescribeAccountAttributes
+                - sms-voice:DescribeSpendLimits
+                - sms-voice:DescribePhoneNumbers
+                - sms-voice:SetTextMessageSpendLimitOverride
+                - sms-voice:DescribeOptedOutNumbers
+                - sms-voice:DeleteOptedOutNumber
+              Resource: '*'
+              Condition:
+                StringEquals:
+                  aws:CalledViaLast: sns.amazonaws.com
+      RecursiveLoop: Terminate
+      SnapStart:
+        ApplyOn: None
+      Events:
+        GetCustomerOrderDetail:
+          Type: Api
+          Properties:
+            Path: /customer/order
+            Method: GET
+            RestApiId: !Ref MyApi
+      RuntimeManagementConfig:
+        UpdateRuntimeOn: Auto
+
+  MyApi:
+    Type: AWS::Serverless::Api
     Properties:
-      ResourceGroupName:
-        Ref: ApplicationResourceGroup
-      AutoConfigurationEnabled: 'true'
-Outputs:
-  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
-  # Find out more about other implicit resources you can reference within SAM
-  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
-  HelloWorldApi:
-    Description: API Gateway endpoint URL for Prod stage for Hello World function
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/hello/"
-  HelloWorldFunction:
-    Description: Hello World Lambda Function ARN
-    Value: !GetAtt HelloWorldFunction.Arn
-  HelloWorldFunctionIamRole:
-    Description: Implicit IAM Role created for Hello World function
-    Value: !GetAtt HelloWorldFunctionRole.Arn
+      Name: MyApi
+      StageName: !Ref Stage
+      Cors:
+        AllowOrigin: "'http://127.0.0.1:3000'"
+        AllowMethods:
+          - "'GET'"
+          - "'POST'"
+          - "'PUT'"
+          - "'DELETE'"
+        AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+        MaxAge: 3600
+      Auth:
+        ApiKeyRequired: false
+
+  Layer1:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      ContentUri: ./utils
+      LayerName: utils
+      CompatibleRuntimes:
+        - python3.12
+
+
+
+# AWSTemplateFormatVersion: '2010-09-09'
+# Transform: AWS::Serverless-2016-10-31
+# Description: >
+#   sam-dynamodb-app
+
+#   Sample SAM Template for sam-dynamodb-app
+
+# Parameters:
+#   Stage:
+#     Type: String
+#     Default: local
+
+# Resources:
+#   sampleFunction:
+#     Type: AWS::Serverless::Function
+#     Properties:
+#       CodeUri: hello_world/
+#       Handler: app.lambda_handler
+#       Runtime: python3.12
+#       MemorySize: 128
+#       Timeout: 10
+#       Environment:
+#         Variables:
+#           DYNAMODB_ENDPOINT: "http://host.docker.internal:8000"  # DynamoDB のローカルエンドポイント
+#       Layers:
+#         - !Ref Layer1
+#       Policies:
+#         - DynamoDBCrudPolicy:
+#             TableName: SampleTable
+#       Events:
+#         sampleFunction:
+#           Type: Api
+#           Properties:
+#             Path: /sample
+#             Method: GET
+#             RestApiId: !Ref MyApi  # 追加した API Gateway を参照
+
+#   getcustomerorderdetail:
+#     Type: AWS::Serverless::Function
+#     Properties:
+#       CodeUri: getCustomerOrderDetail/
+#       Description: ''
+#       MemorySize: 128
+#       Timeout: 7
+#       Handler: lambda_function.lambda_handler
+#       Runtime: python3.12
+#       Architectures:
+#         - arm64
+#       EphemeralStorage:
+#         Size: 512
+#       Environment:
+#         Variables:
+#           # env: dev
+#           # DYNAMODB_ENDPOINT: http://host.docker.internal:8000
+#       EventInvokeConfig:
+#         MaximumEventAgeInSeconds: 21600
+#         MaximumRetryAttempts: 2
+#       Layers:
+#         - !Ref Layer1
+#       PackageType: Zip
+#       Policies:
+#         - Statement:
+#             - Effect: Allow
+#               Action:
+#                 - dynamodb:DeleteItem
+#                 - dynamodb:GetItem
+#                 - dynamodb:PutItem
+#                 - dynamodb:Scan
+#                 - dynamodb:UpdateItem
+#               Resource: arn:aws:dynamodb:ap-northeast-1:058264340767:table/*
+#             - Effect: Allow
+#               Action:
+#                 - logs:CreateLogGroup
+#               Resource: arn:aws:logs:ap-northeast-1:058264340767:*
+#             - Effect: Allow
+#               Action:
+#                 - logs:CreateLogStream
+#                 - logs:PutLogEvents
+#               Resource:
+#                 - >-
+#                   arn:aws:logs:ap-northeast-1:058264340767:log-group:/aws/lambda/get-goods:*
+#             - Sid: CloudWatchLogsFullAccess
+#               Effect: Allow
+#               Action:
+#                 - logs:*
+#                 - cloudwatch:GenerateQuery
+#               Resource: '*'
+#             - Sid: SNSFullAccess
+#               Effect: Allow
+#               Action:
+#                 - sns:*
+#               Resource: '*'
+#             - Sid: SMSAccessViaSNS
+#               Effect: Allow
+#               Action:
+#                 - sms-voice:DescribeVerifiedDestinationNumbers
+#                 - sms-voice:CreateVerifiedDestinationNumber
+#                 - sms-voice:SendDestinationNumberVerificationCode
+#                 - sms-voice:SendTextMessage
+#                 - sms-voice:DeleteVerifiedDestinationNumber
+#                 - sms-voice:VerifyDestinationNumber
+#                 - sms-voice:DescribeAccountAttributes
+#                 - sms-voice:DescribeSpendLimits
+#                 - sms-voice:DescribePhoneNumbers
+#                 - sms-voice:SetTextMessageSpendLimitOverride
+#                 - sms-voice:DescribeOptedOutNumbers
+#                 - sms-voice:DeleteOptedOutNumber
+#               Resource: '*'
+#               Condition:
+#                 StringEquals:
+#                   aws:CalledViaLast: sns.amazonaws.com
+#       RecursiveLoop: Terminate
+#       SnapStart:
+#         ApplyOn: None
+#       Events:
+#         GetCustomerOrderDetail:
+#           Type: Api
+#           Properties:
+#             Path: /customer/order
+#             Method: GET
+#             RestApiId: !Ref MyApi  # 追加した API Gateway を参照
+#       RuntimeManagementConfig:
+#         UpdateRuntimeOn: Auto
+
+#   MyApi:
+#     Type: AWS::Serverless::Api
+#     Properties:
+#       Name: MyApi
+#       StageName: !Ref Stage
+#       StageVariables: !Ref Stag
+#       Cors:
+#         # AllowOrigins: "'*'"  # 任意のドメインを許可。必要に応じて変更
+#         AllowOrigin: "'http://127.0.0.1:3000'"
+#         AllowMethods:
+#         - "'GET'"
+#         - "'POST'"
+#         - "'PUT'"
+#         - "'DELETE'"
+#         AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+#         # - "'Content-Type'"
+#         MaxAge: 3600  # オプション。プリフライトリクエストのキャッシュの時間を設定
+#       Auth:
+#         ApiKeyRequired: false
+
+#   Layer1:
+#     Type: AWS::Serverless::LayerVersion
+#     Properties:
+#       ContentUri: ./utils
+#       LayerName: utils
+#       CompatibleRuntimes:
+#         - python3.12
