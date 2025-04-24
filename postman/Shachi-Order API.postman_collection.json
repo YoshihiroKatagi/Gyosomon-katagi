@@ -1,0 +1,222 @@
+{
+	"info": {
+		"_postman_id": "58b5caf2-3029-4695-86bf-0a9be0e2c638",
+		"name": "Shachi-Order API",
+		"description": "Postman collection for testing Shachi-Order APIs",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "27412148"
+	},
+	"item": [
+		{
+			"name": "Get Customer Order List",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{api_base_url}}/customer/order_list?customer_id={{customer_id}}",
+					"host": [
+						"{{api_base_url}}"
+					],
+					"path": [
+						"customer",
+						"order_list"
+					],
+					"query": [
+						{
+							"key": "customer_id",
+							"value": "{{customer_id}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Customer Order Detail",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text",
+						"disabled": true
+					},
+					{
+						"key": "alias",
+						"value": "local",
+						"type": "text",
+						"disabled": true
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{api_base_url}}customer/order/?customer_id={{customer_id}}&order_id={{order_id}}",
+					"host": [
+						"{{api_base_url}}customer"
+					],
+					"path": [
+						"order",
+						""
+					],
+					"query": [
+						{
+							"key": "customer_id",
+							"value": "{{customer_id}}"
+						},
+						{
+							"key": "order_id",
+							"value": "{{order_id}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Customer Product List",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{api_base_url}}/customer/product_list?customer_id={{customer_id}}",
+					"host": [
+						"{{api_base_url}}"
+					],
+					"path": [
+						"customer",
+						"product_list"
+					],
+					"query": [
+						{
+							"key": "customer_id",
+							"value": "{{customer_id}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Post Customer Order",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"customer_id\": \"{{customer_id}}\", \"order_items\": [{\"product_id\": \"{{product_id}}\", \"quantity\": 1}]}"
+				},
+				"url": {
+					"raw": "{{api_base_url}}/customer/order",
+					"host": [
+						"{{api_base_url}}"
+					],
+					"path": [
+						"customer",
+						"order"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Staff Order List",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{api_base_url}}/staff/order_list?staff_id={{staff_id}}",
+					"host": [
+						"{{api_base_url}}"
+					],
+					"path": [
+						"staff",
+						"order_list"
+					],
+					"query": [
+						{
+							"key": "staff_id",
+							"value": "{{staff_id}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Staff Order Detail",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{api_base_url}}/staff/order?staff_id={{staff_id}}&order_id={{order_id}}",
+					"host": [
+						"{{api_base_url}}"
+					],
+					"path": [
+						"staff",
+						"order"
+					],
+					"query": [
+						{
+							"key": "staff_id",
+							"value": "{{staff_id}}"
+						},
+						{
+							"key": "order_id",
+							"value": "{{order_id}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Staff Confirm Order",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "{{api_base_url}}/staff/confirm_order",
+					"host": [
+						"{{api_base_url}}"
+					],
+					"path": [
+						"staff",
+						"confirm_order"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Staff Cancel Order",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "{{api_base_url}}/staff/cancel_order",
+					"host": [
+						"{{api_base_url}}"
+					],
+					"path": [
+						"staff",
+						"cancel_order"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
